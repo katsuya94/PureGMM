@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Utilizing Likes/Dislikes in Gaussian Mixture Models</title>
+
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="container">
+      <h1>Utilizing Likes/Dislikes in Gaussian Mixture Models<br><small>Adrien Katsuya Tateno</small></h1>
+      <h2>Abstract</h2>
+      <p>Gaussian mixture models are an effective way to represent clusters of normally distributed data. While the model parameters can be learned from unlabeled data, results may benefit from human input. While it is often impractical or expensive to obtain human labeling on a classification task, many users are willing to like or dislike an entry across many different platforms. To utilize this data we present a modification of gaussian mixture models that prefers clusterings with fewer conflicting likes/dislikes.</p>
+      <hr>
+      <h2>Contents</h2>
+      <ul>
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#purity">Purity</a></li>
+      <li><a href="#model">The Model</a></li>
+      <li><a href="#inference">Inference</a></li>
+      </ul>
+      <h2 id="introduction">Introduction</h2>
+      <p>Consider a platform that allows users to view a sufficiently large number of entries of some kind. For example videos or recipes. When tasked with clustering these entries or examples, a common approach is to transform attributes of the examples into continuous n-dimensional space and use unsupervised clustering algorithms like gaussian mixture models or k-means clustering. Labeled data is effective when learning these kinds of classifications, however platform restrictions may make human participation impractical or expensive. Many platforms, however, are able to obtain significant amounts of like/dislike data. Users are often willing to press a button to express their general satisfaction/dissatisfaction. How can a machine learning algorithm take advantage of this data to improve the meaningfulness of generated hypotheses?</p>
+      <img class="img-responsive center-block" src="./img/1.svg">
+      <p>As a motivating example, figure 1 appears to be made of a single cluster, however the likes/dislikes tell a different story. Many users tend to like either things on the left or things on the right. Intuitively, this suggests a model with two overlapping clusters (figure 2). We can loosely quantify this intuition in terms of <i>purity</i>. Ideally all clusters should be <i>pure</i> in that any given user will either like or dislike every example in the cluster.</p>
+      <img class="img-responsive center-block" src="./img/2.svg">
+      <h2 id="purity">Purity</h2>
+      <p>We want the purity of cluster to have the following properties.</p>
+      <ul>
+      <li>Certainty about purity should reflect the number of likes.
+      <li>An example's effect on the purity should be proportional to the probability that the cluster generated the example.</li>
+      <li>Purity should not depend on the overall ratio of likes to dislikes.</li>
+      </ul>
+      <h2 id="model">The Model</h2>
+      PGM for traditional GMM
+      PGM for modified GMM
+      <h2 id="inference">Inference</h2>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <!-- Bootstrap -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <!-- MathJax -->
+    <script type="text/javascript"
+  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+  </body>
+</html>
