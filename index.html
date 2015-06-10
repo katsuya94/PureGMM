@@ -36,15 +36,14 @@
       <li><a href="#introduction">Introduction</a></li>
       <li><a href="#model">The Model</a></li>
       <li><a href="#inference">Inference</a></li>
-      <li><a href="#results">Results</a></li>
-      <li><a href="#conslusion">Conclusion</a></li>
+      <li><a href="#conclusion">Conclusion</a></li>
       </ul>
       <h2 id="introduction">Introduction</h2>
       <p>Consider a platform that allows users to view a sufficiently large number of entries of some kind. For example videos or recipes. When tasked with clustering these entries or examples, a common approach is to transform attributes of the examples into continuous n-dimensional space and use unsupervised clustering algorithms like gaussian mixture models or k-means clustering. While these techniques work well enough in many cases, the presence of labeled examples greatly reduces computational complexity.</p>
       <p>Unfortunately, in many cases platform restrictions may make obtaining labeled data from humans impractical or expensive. Many platforms, however, are able to obtain significant amounts of like/dislike data. Users are often willing or even motivated to press a button to express their general satisfaction/dissatisfaction. How can a machine learning algorithm take advantage of this data to improve the meaningfulness of generated hypotheses?</p>
       <img class="img-responsive center-block" src="./img/1.svg">
       <p>As a motivating example, figure 1 appears to be made from a single mixture component, however the likes/dislikes tell a different story. Many users tend to like either things on the left or things on the right. Intuitively, this suggests a model with two overlapping components. Figure 2 is a coloring of the exact same dataset that represents this. We can loosely quantify this intuition in terms of <i>purity</i>. Ideally all clusters should be <i>pure</i> in that any given user will either like or dislike every example in a cluster.</p>
-      <p>In this work we will further define purity and its properties in the context of a graphical model. We will rigorously define the model and present how to perform statistical inference using expectation maximization. Finally we will evaluate the performance of the model on contrived datasets.</p>
+      <p>In this work we will further define purity and its properties in the context of a graphical model. We will rigorously define the model and present how to perform statistical inference using expectation maximization.</p>
       <img class="img-responsive center-block" src="./img/2.svg">
       <h2 id="model">The Model</h2>
       <p>Let \(x_1\ldots x_N\) be entries in a given domain. Additionally, let \(u_1\ldots u_M\) be users in the domain. For each entry \(x_i\) and user \(u_j\)&hellip;<p>
@@ -52,7 +51,7 @@
       l_{i,j} =
        \begin{cases}
         1 &amp; \text{if } u_j\text{ likes } x_i\\
-        -1 &amp; \text{if } u_j\text{ dislikes } x_i
+        0 &amp; \text{if } u_j\text{ dislikes } x_i
        \end{cases}
       \]
       <p>Mixture components \(k\) are normally distributed with parameters \(\mu_k\) and \(\Sigma_k\). Entries \(x_i\) are generated according to the following generative process. The component \(z_i\) for entry \(i\) is drawn from the categorical distribution with parameter \(\mathbf\phi\), where \(\mathbf\phi\) is a hyperparameter of the model, often symmetric. \(x_i\) is drawn from the multivariate normal distribution with parameters \(\mu_{z_i}\) and \(\Sigma_{z_i}\).</p>
@@ -60,7 +59,7 @@
       <p>To discuss the intuition for this model, examine figure 3, the model displayed in plate notation. \(l_{i,j}\) is only directly dependent on \(z_i\) and \(u_{j,k}\). This makes the assumption that user likes/dislikes are based off the class alone, not the attributes of the entry itself. Making this assumption not only reduces the complexity of the model, but make maximum likelihood estimations trend towards purity because it is unlikely that the same user will generate conflicting likes/dislikes.</p>
       <p class="text-center fake-title">Figure 3</p>
       <img class="img-responsive center-block" src="./img/3.svg">
-      <p>Consider the example from figures 1 and 2. Suppose that user \(u_A\) likes entries on the right but dislikes entries on the left. If a mixture component is centered as in figure 1 then while the probability of \(x\) given \(\Sigma,\mu\) there exists \(u_{A,k}\) that can generate likes on the righ and dislikes on the left with high probability. Thus we see that a maximum likelihood estimate far prefers two off-center mixture componenets as in figure 2. The model is formally stated as follows&hellip;</p>
+      <p>Consider the example from figures 1 and 2. Suppose that user \(u_A\) likes entries on the right but dislikes entries on the left. If a mixture component is centered as in figure 1, then while the probability of \(x\) given \(\Sigma,\mu\) may be high, there exists no \(u_{A,k}\) that can generate likes on the right and dislikes on the left with high probability. Thus we see that a maximum likelihood estimate far prefers two off-center mixture componenets as in figure 2. The model is formally stated as follows&hellip;</p>
       \[
       \begin{align*}
        \mathbf\phi &amp;\equiv \text{Prior distribution over components}\\
@@ -69,32 +68,88 @@
        \Sigma_k &amp;\equiv \text{Covariance matrix of component }k\\
        x_i &amp;\sim \text{Normal}(\mu_{z_i},\Sigma_{z_i})\\
        u_{j,k} &amp;\equiv \text{Affinity of }u_j \text{ for component }k\\
-       l_{i,j} &amp;\sim \text{Bernoulli}_{\{-1,1\}}(u_{j,z_i})\\
+       l_{i,j} &amp;\sim \text{Bernoulli}(u_{j,z_i})\\
       \end{align*}
       \]
       <h2 id="inference">Inference</h2>
       <p>Let \(X\equiv \{x_i: i\in 1\ldots N\}\), \(L\equiv \{l_{i,j}: i\in 1\ldots N, j\in 1\ldots M\}\), and \(Z\equiv \{z_i: i\in 1\ldots N\}\). Additionally let \(\mu\equiv \{\mu_k: k\in 1\ldots K\}\), \(\Sigma\equiv \{\Sigma_k: k\in 1\ldots K\}\), and \(u\equiv \{u_{j,k}: j\in 1\ldots M, k\in 1\ldots K\}\). By finding the maximum likelihood estimate of the model we find parameters that describe data with the highest probability.</p>
       \[
       \DeclareMathOperator*{\argmax}{arg\,max}
-      \argmax_{\mu,\Sigma,u}p(X,L\mid\mu,\Sigma,u)
+      \argmax_{\mu,\Sigma,u,\mathbf\phi}p(X,L\mid\mu,\Sigma,u,\mathbf\phi)
       \]
       <p>Equivalently, we can maximize the log likelihood function \(\mathcal{L}\) because log is monotonically increasing.</p>
       \[
       \begin{align*}
-       \mathcal{L}(\mu,\Sigma,u;X,L)&amp;= \log{p(X,L\mid\mu,\Sigma,u)}\\
-       &amp;= \log{\prod_i{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u)}}\\
-       &amp;= {\sum_i{\log{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u)}}}\\
-       &amp;= {\sum_i{\log\sum_k{\left[{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u,z_i=k)p(z_i=k\mid\mu,\Sigma,u)}\right]}}}\\
+       \mathcal{L}(\mu,\Sigma,u,\mathbf\phi;X,L)&amp;= \log{p(X,L\mid\mu,\Sigma,u,\mathbf\phi)}\\
+       &amp;= \log{\prod_{i\in 1\ldots N}{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u,\mathbf\phi)}}\\
+       &amp;= \sum_{i\in 1\ldots N}{\log{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u,\mathbf\phi)}}\\
+       &amp;= \sum_{i\in 1\ldots N}{\log\sum_{k\in 1\ldots K}{\left[{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u,\mathbf\phi,z_i=k)p(z_i=k\mid\mu,\Sigma,u,\mathbf\phi)}\right]}}\\
       \end{align*}
       \]
-      <p>However directly otimizing the likelihood function is intractable. Instead we use expectation-maximization (EM) an iterative approach to learning the parameters. In this model observed quantities are \(X\) and \(L\). Latent variables are \(Z\), and parameters are \(\mu\), \(\Sigma\), and \(u\). First we find the complete likelihood function \(\mathcal{L}_c\).</p>
+      <p>However directly optimizing the likelihood function is intractable. Instead we use expectation-maximization (EM) an iterative approach to learning the parameters. In this model observed quantities are \(X\) and \(L\). Latent variables are \(Z\), and parameters are \(\mu\), \(\Sigma\), and \(u\). First we find the complete likelihood function \(\mathcal{L}_c\).</p>
       \[
       \begin{align*}
-       \mathcal{L}_c(\mu,\Sigma,u;X,L,Z)&amp;= \log{p(X,L,Z\mid\mu,\Sigma,u)}\\
-       &amp;= \log{\prod_i{\left[p(x_i\mid\mu,\Sigma,u)\prod_j{p(l_{i,j}\mid\mu,\Sigma,u)}\right]}}\\
-       &amp;= {\sum_i{\left[\log{p(x_i\mid\mu,\Sigma,u)}\sum_j{\log{p(l_{i,j}\mid\mu,\Sigma,u)}}\right]}}\\
+       \mathcal{L}_c(\mu,\Sigma,u,\mathbf\phi;X,L,Z)&amp;= \log{p(X,L,Z\mid\mu,\Sigma,u)}\\
+       &amp;= \log{\prod_{i\in 1\ldots N}{p(x_i,l_{i,1},\ldots,l_{i,M},z_i\mid\mu,\Sigma,u,\mathbf\phi)}}\\
+       &amp;= \sum_{i\in 1\ldots N}{\log{p(x_i,l_{i,1},\ldots,l_{i,M},z_i\mid\mu,\Sigma,u,\mathbf\phi)}}\\
+       &amp;= \sum_{i\in 1\ldots N}{\log\left[{p(x_i,l_{i,1},\ldots,l_{i,M}\mid z_i,\mu,\Sigma,u,\mathbf\phi)p(z_i\mid\mu,\Sigma,u,\mathbf\phi)}\right]}\\
+       &amp;= \sum_{i\in 1\ldots N}{\left[\log{p(x_i,l_{i,1},\ldots,l_{i,M}\mid z_i,\mu,\Sigma,u,\mathbf\phi)}+\log{p(z_i\mid\mu,\Sigma,u,\mathbf\phi)}\right]}\\
+       &amp;= \sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{\mathbb{1}_{\{z_i=k\}}\left[\log{\phi_k}+\log{p(x_i\mid \mu_k,\Sigma_k)+\sum_{j\in 1\ldots M}{\log{p(l_{i,j}\mid u_{j,k})}}}\right]}}\\
       \end{align*}
       \]
+      <p>At each expectation step \(t\), compute 
+      \(Q\) the conditional expectation of \(\mathcal{L}_c\) given observed data \(X\), \(L\) and the current estimation of parameters \(\mu^{(t)}\), \(\Sigma^{(t)}\), and \(u^{(t)}\).</p>
+      \[
+      \begin{align*}
+       &amp;Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})\\
+       =&amp;E{\left[\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{\mathbb{1}_{\{z_i=k\}}\left[\log{\phi_k}+\log{p(x_i\mid \mu_k,\Sigma_k)+\sum_{j\in 1\ldots M}{\log{p(l_{i,j}\mid u_{j,k})}}}\right]}}\mid X,L,\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)}\right]}\\
+       =&amp;\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{E{\left[\mathbb{1}_{\{z_i=k\}}\mid X,L,\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)}\right]\left[\log{\phi_k}+\log{p(x_i\mid \mu_k,\Sigma_k)+\sum_{j\in 1\ldots M}{\log{p(l_{i,j}\mid u_{j,k})}}}\right]}}}\\
+      \end{align*}
+      \]
+      \[
+      \begin{align*}
+       h_k^i=E{\left[\mathbb{1}_{\{z_i=k\}}\mid X,L,\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)}\right]}&amp;=p(z_i=k\mid X,L,\mu^{(t)},\Sigma^{(t)},u^{(t)})\\
+       &amp;=\frac{p(x_i,l_{i,1},\ldots,l_{i,M}\mid z_i=k,\mu^{(t)},\Sigma^{(t)},u^{(t)})\phi_k}{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})}\\
+       &amp;=\frac{p(x_i,l_{i,1},\ldots,l_{i,M}\mid z_i=k,\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})\phi_k}{\sum_{k'\in 1\ldots K}{p(x_i,l_{i,1},\ldots,l_{i,M}\mid z_i=k',\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})\phi_{k'}}}\\
+      \end{align*}
+      \]
+      \[
+      p(x_i,l_{i,1},\ldots,l_{i,M}\mid z_i=k,\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=p(x_i\mid\mu_k^{(t)},\Sigma_k^{(t)})\prod_{j\in 1\ldots M}p(l_{i,j}\mid u_{j,k}^{(t)})=g_k^i
+      \]
+      \[
+      h_k^i=\frac{g_k^i}{\sum_{k'\in 1\ldots K}g_{k'}^i}
+      \]
+      <p>The probabilities of \(x_i\) and \(l_{i,j}\) conditioned on parameters can bet simply calculated from the Normal and Bernoulli PDFs respectively.</p>
+      \[
+      Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{h_k^i\left[\log{\phi_k}+\log{p(x_i\mid \mu_k,\Sigma_k)+\sum_{j\in 1\ldots M}{\log{p(l_{i,j}\mid u_{j,k})}}}\right]}}
+      \]
+      <p>In the maximization step we differentiate to find maximizing values for \(Q\) and update the parameters accordingly.</p>
+      \[
+      \mu^{(t+1)},\Sigma^{(t+1)},u^{(t+1)},\mathbf\phi^{(t+1)}=\argmax_{\mu,\Sigma,u,\mathbf\phi}{Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})}
+      \]
+      <p>For \(\mathbf\phi\), this is easy.</p>
+      \[
+      \nabla_{\mathbf\phi}Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\nabla_{\mathbf\phi}\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{h_k^i\log{\phi_k}}}=0\\
+      \phi_k^{(t+1)}=\frac{\sum_{i\in 1\ldots N}h_k^i}N
+      \]
+      <p>This is the summation of component probabilities, which intuitively reflects the total distribution of examples across components. For the Gaussian component parameters, simply compute statistics over the data (weighted by \(h_k^i\), example \(x_i\)&apos;s probability of being generated by component \(k\).</p>
+      \[
+      \nabla_{\mu,\Sigma}Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\nabla_{\mu,\Sigma}\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{h_k^i\log{p(x_i\mid \mu_k,\Sigma_k)}}}=0\\
+      \begin{align*}
+       \mu_k^{(t+1)}&amp;=\frac{\sum_{i\in 1\ldots N}h_k^ix_i}{\sum_{i\in 1\ldots N}h_k^i}\\
+       \Sigma_k^{(t+1)}&amp;=\frac{\sum_{i\in 1\ldots N}h_k^i(x_i-\mu_k^{t+1})(x_i-\mu_k^{t+1})^T}{\sum_{i\in 1\ldots N}h_k^i}\\
+      \end{align*}
+      \]
+      <p>Finally we perform a similar computation for each user \(u_j\).</p>
+      \[
+      \nabla_{u_j}Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\nabla_{u_j}\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}h_k^i{\log{p(l_{i,j}\mid u_{j,k})}}}=0
+      \]
+      <p>Observe that this is the probability that M independent Bernoulli trials produce \(l_{i,j}\)s weighted by h_k^i. This achieves maximum probability when parameterized with the weighted proportion of likes to dislikes.</p>
+      \[
+      u_{j,k}^{(t+1)}=\frac{\sum_{i\in 1\ldots N}h_k^il_{i,j}}{\sum_{i\in 1\ldots N}h_k^i}
+      \]
+      <h2 id="conclusion">Conclusion</h2>
+      <p>This model was originally conceived to cluster recipies into groups that represent similar tastes. The intuition is that this model would capture features of recipes too minute to learn without user data. The next step for the project would be to test the model on a contrived dataset. Interesting contrived datasets to examine would have closely spaced clusters that might be mistaken for a single cluster, but differing strengths of opinion among the users. Additionally it would be interesting to study the effect of different starting guesses for the parameters.</p>
     </div>
 
     <!-- jQuery -->
