@@ -10,6 +10,14 @@
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
 
+    <style>
+    .fake-title {
+      font-weight: bold;
+      font-size: 8pt;
+      margin: 0;
+    }
+    </style>
+
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -26,26 +34,67 @@
       <h2>Contents</h2>
       <ul>
       <li><a href="#introduction">Introduction</a></li>
-      <li><a href="#purity">Purity</a></li>
       <li><a href="#model">The Model</a></li>
       <li><a href="#inference">Inference</a></li>
+      <li><a href="#results">Results</a></li>
+      <li><a href="#conslusion">Conclusion</a></li>
       </ul>
       <h2 id="introduction">Introduction</h2>
-      <p>Consider a platform that allows users to view a sufficiently large number of entries of some kind. For example videos or recipes. When tasked with clustering these entries or examples, a common approach is to transform attributes of the examples into continuous n-dimensional space and use unsupervised clustering algorithms like gaussian mixture models or k-means clustering. Labeled data is effective when learning these kinds of classifications, however platform restrictions may make human participation impractical or expensive. Many platforms, however, are able to obtain significant amounts of like/dislike data. Users are often willing to press a button to express their general satisfaction/dissatisfaction. How can a machine learning algorithm take advantage of this data to improve the meaningfulness of generated hypotheses?</p>
+      <p>Consider a platform that allows users to view a sufficiently large number of entries of some kind. For example videos or recipes. When tasked with clustering these entries or examples, a common approach is to transform attributes of the examples into continuous n-dimensional space and use unsupervised clustering algorithms like gaussian mixture models or k-means clustering. While these techniques work well enough in many cases, the presence of labeled examples greatly reduces computational complexity.</p>
+      <p>Unfortunately, in many cases platform restrictions may make obtaining labeled data from humans impractical or expensive. Many platforms, however, are able to obtain significant amounts of like/dislike data. Users are often willing or even motivated to press a button to express their general satisfaction/dissatisfaction. How can a machine learning algorithm take advantage of this data to improve the meaningfulness of generated hypotheses?</p>
       <img class="img-responsive center-block" src="./img/1.svg">
-      <p>As a motivating example, figure 1 appears to be made of a single cluster, however the likes/dislikes tell a different story. Many users tend to like either things on the left or things on the right. Intuitively, this suggests a model with two overlapping clusters (figure 2). We can loosely quantify this intuition in terms of <i>purity</i>. Ideally all clusters should be <i>pure</i> in that any given user will either like or dislike every example in the cluster.</p>
+      <p>As a motivating example, figure 1 appears to be made from a single mixture component, however the likes/dislikes tell a different story. Many users tend to like either things on the left or things on the right. Intuitively, this suggests a model with two overlapping components. Figure 2 is a coloring of the exact same dataset that represents this. We can loosely quantify this intuition in terms of <i>purity</i>. Ideally all clusters should be <i>pure</i> in that any given user will either like or dislike every example in a cluster.</p>
+      <p>In this work we will further define purity and its properties in the context of a graphical model. We will rigorously define the model and present how to perform statistical inference using expectation maximization. Finally we will evaluate the performance of the model on contrived datasets.</p>
       <img class="img-responsive center-block" src="./img/2.svg">
-      <h2 id="purity">Purity</h2>
-      <p>We want the purity of cluster to have the following properties.</p>
-      <ul>
-      <li>Certainty about purity should reflect the number of likes.
-      <li>An example's effect on the purity should be proportional to the probability that the cluster generated the example.</li>
-      <li>Purity should not depend on the overall ratio of likes to dislikes.</li>
-      </ul>
       <h2 id="model">The Model</h2>
-      PGM for traditional GMM
-      PGM for modified GMM
+      <p>Let \(x_1\ldots x_N\) be entries in a given domain. Additionally, let \(u_1\ldots u_M\) be users in the domain. For each entry \(x_i\) and user \(u_j\)&hellip;<p>
+      \[
+      l_{i,j} =
+       \begin{cases}
+        1 &amp; \text{if } u_j\text{ likes } x_i\\
+        -1 &amp; \text{if } u_j\text{ dislikes } x_i
+       \end{cases}
+      \]
+      <p>Mixture components \(k\) are normally distributed with parameters \(\mu_k\) and \(\Sigma_k\). Entries \(x_i\) are generated according to the following generative process. The component \(z_i\) for entry \(i\) is drawn from the categorical distribution with parameter \(\mathbf\phi\), where \(\mathbf\phi\) is a hyperparameter of the model, often symmetric. \(x_i\) is drawn from the multivariate normal distribution with parameters \(\mu_{z_i}\) and \(\Sigma_{z_i}\).</p>
+      <p>How does user input factor into the model? Let \(u_{j,k}\) be a scalar parameter representing the affinity of \(u_j\) for component \(k\). \(l_{i,j}\) is then drawn from a binomial distribution with parameter \(u_{j,z_i}\). Notice that \(u_{j,z_i}\) represent user preference and are not what we set out to find. By performing statistical inference on the model, we learn a representation of user preference as well as mixture component parameters. Though outside the scope of this work, this could potentially have applications in learning user traits.</p>
+      <p>To discuss the intuition for this model, examine figure 3, the model displayed in plate notation. \(l_{i,j}\) is only directly dependent on \(z_i\) and \(u_{j,k}\). This makes the assumption that user likes/dislikes are based off the class alone, not the attributes of the entry itself. Making this assumption not only reduces the complexity of the model, but make maximum likelihood estimations trend towards purity because it is unlikely that the same user will generate conflicting likes/dislikes.</p>
+      <p class="text-center fake-title">Figure 3</p>
+      <img class="img-responsive center-block" src="./img/3.svg">
+      <p>Consider the example from figures 1 and 2. Suppose that user \(u_A\) likes entries on the right but dislikes entries on the left. If a mixture component is centered as in figure 1 then while the probability of \(x\) given \(\Sigma,\mu\) there exists \(u_{A,k}\) that can generate likes on the righ and dislikes on the left with high probability. Thus we see that a maximum likelihood estimate far prefers two off-center mixture componenets as in figure 2. The model is formally stated as follows&hellip;</p>
+      \[
+      \begin{align*}
+       \mathbf\phi &amp;\equiv \text{Prior distribution over components}\\
+       z_i &amp;\sim \text{Categorical}(\mathbf\phi)\\
+       \mu_k &amp;\equiv \text{Mean of component }k\\
+       \Sigma_k &amp;\equiv \text{Covariance matrix of component }k\\
+       x_i &amp;\sim \text{Normal}(\mu_{z_i},\Sigma_{z_i})\\
+       u_{j,k} &amp;\equiv \text{Affinity of }u_j \text{ for component }k\\
+       l_{i,j} &amp;\sim \text{Bernoulli}_{\{-1,1\}}(u_{j,z_i})\\
+      \end{align*}
+      \]
       <h2 id="inference">Inference</h2>
+      <p>Let \(X\equiv \{x_i: i\in 1\ldots N\}\), \(L\equiv \{l_{i,j}: i\in 1\ldots N, j\in 1\ldots M\}\), and \(Z\equiv \{z_i: i\in 1\ldots N\}\). Additionally let \(\mu\equiv \{\mu_k: k\in 1\ldots K\}\), \(\Sigma\equiv \{\Sigma_k: k\in 1\ldots K\}\), and \(u\equiv \{u_{j,k}: j\in 1\ldots M, k\in 1\ldots K\}\). By finding the maximum likelihood estimate of the model we find parameters that describe data with the highest probability.</p>
+      \[
+      \DeclareMathOperator*{\argmax}{arg\,max}
+      \argmax_{\mu,\Sigma,u}p(X,L\mid\mu,\Sigma,u)
+      \]
+      <p>Equivalently, we can maximize the log likelihood function \(\mathcal{L}\) because log is monotonically increasing.</p>
+      \[
+      \begin{align*}
+       \mathcal{L}(\mu,\Sigma,u;X,L)&amp;= \log{p(X,L\mid\mu,\Sigma,u)}\\
+       &amp;= \log{\prod_i{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u)}}\\
+       &amp;= {\sum_i{\log{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u)}}}\\
+       &amp;= {\sum_i{\log\sum_k{\left[{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u,z_i=k)p(z_i=k\mid\mu,\Sigma,u)}\right]}}}\\
+      \end{align*}
+      \]
+      <p>However directly otimizing the likelihood function is intractable. Instead we use expectation-maximization (EM) an iterative approach to learning the parameters. In this model observed quantities are \(X\) and \(L\). Latent variables are \(Z\), and parameters are \(\mu\), \(\Sigma\), and \(u\). First we find the complete likelihood function \(\mathcal{L}_c\).</p>
+      \[
+      \begin{align*}
+       \mathcal{L}_c(\mu,\Sigma,u;X,L,Z)&amp;= \log{p(X,L,Z\mid\mu,\Sigma,u)}\\
+       &amp;= \log{\prod_i{\left[p(x_i\mid\mu,\Sigma,u)\prod_j{p(l_{i,j}\mid\mu,\Sigma,u)}\right]}}\\
+       &amp;= {\sum_i{\left[\log{p(x_i\mid\mu,\Sigma,u)}\sum_j{\log{p(l_{i,j}\mid\mu,\Sigma,u)}}\right]}}\\
+      \end{align*}
+      \]
     </div>
 
     <!-- jQuery -->
@@ -53,8 +102,6 @@
     <!-- Bootstrap -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
     <!-- MathJax -->
-    <script type="text/javascript"
-  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
-</script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
   </body>
 </html>
