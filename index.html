@@ -27,9 +27,11 @@
   </head>
   <body>
     <div class="container">
-      <h1>Utilizing Likes/Dislikes in Gaussian Mixture Models<br><small>Adrien Katsuya Tateno</small></h1>
+      <h1>Utilizing Likes/Dislikes in Gaussian Mixture Models<br><small>EECS 349 &mdash; Northwestern University</small></h1>
+      <h2>Adrien Katsuya Tateno<br><small>AdrienTateno2016@u.northwestern.edu</small></h2>
       <h2>Abstract</h2>
-      <p>Gaussian mixture models are an effective way to represent clusters of normally distributed data. While the model parameters can be learned from unlabeled data, results may benefit from human input. While it is often impractical or expensive to obtain human labeling on a classification task, many users are willing to like or dislike an entry across many different platforms. To utilize this data we present a modification of gaussian mixture models that prefers clusterings with fewer conflicting likes/dislikes.</p>
+      <p>Gaussian mixture models are an effective way to learn clusters of normally distributed data fully unsupervised, however, labeled examples will invariably produce better results faster. While it is often impractical or expensive to obtain human labeling, many platforms&apos; users are willing to exert minimal effort to like or dislike an entry. To utilize this data we present a variation on Gaussian mixture models that prefers clusterings with fewer conflicting likes/dislikes.</p>
+      <img class="img-responsive center-block" src="./img/3.svg">
       <hr>
       <h2>Contents</h2>
       <ul>
@@ -43,7 +45,7 @@
       <p>Unfortunately, in many cases platform restrictions may make obtaining labeled data from humans impractical or expensive. Many platforms, however, are able to obtain significant amounts of like/dislike data. Users are often willing or even motivated to press a button to express their general satisfaction/dissatisfaction. How can such data be incorporated when learning features more intricate than &ldquo;like clusters&rdquo; and &ldquo;dislike clusters&rdquo;.</p>
       <img class="img-responsive center-block" src="./img/1.svg">
       <p>As a motivating example, figure 1 appears to be made from a single mixture component, however the likes/dislikes tell a different story. Many users tend to like either things on the left or things on the right. Intuitively, this suggests a model with two overlapping components. Figure 2 is a coloring of the exact same dataset that represents this. We can loosely quantify this intuition in terms of <i>purity</i>. Ideally all clusters should be <i>pure</i> in that any given user will either like or dislike every example in a cluster.</p>
-      <p>A pure cluster can be viewed as representing not only a meaningful region the attribute space, but also a shared sentiment towards entries in that region, positive or negative. We accomplish this by incorporating a representation of user sentiment in the model. In this work we will rigorously define a variation on Gaussian mixture model and subsequently present how to perform statistical inference on the model using expectation maximization.</p>
+      <p>A pure cluster can be viewed as representing not only a meaningful region the attribute space, but also a shared sentiment towards entries in that region, positive or negative. We accomplish this by incorporating a representation of user sentiment in the model. In this work we will rigorously define a variation on Gaussian mixture model and subsequently present how to perform statistical inference on the model using expectation-maximization.</p>
       <img class="img-responsive center-block" src="./img/2.svg">
       <h2 id="model">The Model</h2>
       <p>Let \(x_1\ldots x_N\) be entries in a given domain. Additionally, let \(u_1\ldots u_M\) be users in the domain. For each entry \(x_i\) and user \(u_j\)&hellip;<p>
@@ -98,7 +100,7 @@
       \end{align*}
       \]
       <p>At each expectation step \(t\), compute 
-      \(Q\) the conditional expectation of \(\mathcal{L}_c\) given observed data \(X\), \(L\) and the current estimation of parameters \(\mu^{(t)}\), \(\Sigma^{(t)}\), and \(u^{(t)}\).</p>
+      \(Q\) the conditional expectation of \(\mathcal{L}_c\) given observed data \(X\), \(L\) and the current estimation of parameters \(\mu^{(t)}\), \(\Sigma^{(t)}\), and \(u^{(t)}\). This allows us to account for not having values for \(z_i\)</p>
       \[
       \begin{align*}
        &amp;Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})\\
@@ -149,7 +151,8 @@
       u_{j,k}^{(t+1)}=\frac{\sum_{i\in 1\ldots N}h_k^il_{i,j}}{\sum_{i\in 1\ldots N}h_k^i}
       \]
       <h2 id="conclusion">Conclusion</h2>
-      <p>This model was originally conceived to cluster recipies into groups that represent similar tastes. The intuition is that this model would capture features of recipes too minute to learn without user data. The next step for the project would be to test the model on a contrived dataset. Interesting contrived datasets to examine would have closely spaced clusters that might be mistaken for a single cluster, but differing strengths of opinion among the users. Additionally it would be interesting to study the effect of different starting guesses for the parameters.</p>
+      <p>In this work we have presented a variation on Gaussian mixture models that incorporates user likes/dislikes and subsequently derived the procedure for maximum likelihood estimation via expectation-maximization. This model was originally conceived to cluster recipies into groups that represent similar tastes. The hope is that this model would capture features of recipes too minute to learn without user data.</p>
+      <p>The next step for this project would be to test the model on a contrived dataset. Interesting contrived datasets to examine would have closely spaced clusters that might be mistaken for a single cluster, but differing strengths of opinion among the users. Additionally it would be interesting to study the effect of different starting guesses for the parameters.</p>
     </div>
 
     <!-- jQuery -->
