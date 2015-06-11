@@ -39,11 +39,11 @@
       <li><a href="#conclusion">Conclusion</a></li>
       </ul>
       <h2 id="introduction">Introduction</h2>
-      <p>Consider a platform that allows users to view a sufficiently large number of entries of some kind. For example videos or recipes. When tasked with clustering these entries or examples, a common approach is to transform attributes of the examples into continuous n-dimensional space and use unsupervised clustering algorithms like gaussian mixture models or k-means clustering. While these techniques work well enough in many cases, the presence of labeled examples greatly reduces computational complexity.</p>
-      <p>Unfortunately, in many cases platform restrictions may make obtaining labeled data from humans impractical or expensive. Many platforms, however, are able to obtain significant amounts of like/dislike data. Users are often willing or even motivated to press a button to express their general satisfaction/dissatisfaction. How can a machine learning algorithm take advantage of this data to improve the meaningfulness of generated hypotheses?</p>
+      <p>Consider a platform that allows users to view a sufficiently large number of entries of some kind. For example videos or recipes. When tasked with clustering these entries, a common approach is to transform attributes of the entries into continuous n-dimensional space and use unsupervised clustering algorithms like Gaussian mixture models or k-means. While these techniques work well enough in many cases, labeled examples will invariably produce better results faster.</p>
+      <p>Unfortunately, in many cases platform restrictions may make obtaining labeled data from humans impractical or expensive. Many platforms, however, are able to obtain significant amounts of like/dislike data. Users are often willing or even motivated to press a button to express their general satisfaction/dissatisfaction. How can such data be incorporated when learning features more intricate than &ldquo;like clusters&rdquo; and &ldquo;dislike clusters&rdquo;.</p>
       <img class="img-responsive center-block" src="./img/1.svg">
       <p>As a motivating example, figure 1 appears to be made from a single mixture component, however the likes/dislikes tell a different story. Many users tend to like either things on the left or things on the right. Intuitively, this suggests a model with two overlapping components. Figure 2 is a coloring of the exact same dataset that represents this. We can loosely quantify this intuition in terms of <i>purity</i>. Ideally all clusters should be <i>pure</i> in that any given user will either like or dislike every example in a cluster.</p>
-      <p>In this work we will further define purity and its properties in the context of a graphical model. We will rigorously define the model and present how to perform statistical inference using expectation maximization.</p>
+      <p>A pure cluster can be viewed as representing not only a meaningful region the attribute space, but also a shared sentiment towards entries in that region, positive or negative. We accomplish this by incorporating a representation of user sentiment in the model. In this work we will rigorously define a variation on Gaussian mixture model and subsequently present how to perform statistical inference on the model using expectation maximization.</p>
       <img class="img-responsive center-block" src="./img/2.svg">
       <h2 id="model">The Model</h2>
       <p>Let \(x_1\ldots x_N\) be entries in a given domain. Additionally, let \(u_1\ldots u_M\) be users in the domain. For each entry \(x_i\) and user \(u_j\)&hellip;<p>
@@ -54,15 +54,15 @@
         0 &amp; \text{if } u_j\text{ dislikes } x_i
        \end{cases}
       \]
-      <p>Mixture components \(k\) are normally distributed with parameters \(\mu_k\) and \(\Sigma_k\). Entries \(x_i\) are generated according to the following generative process. The component \(z_i\) for entry \(i\) is drawn from the categorical distribution with parameter \(\mathbf\phi\), where \(\mathbf\phi\) is a hyperparameter of the model, often symmetric. \(x_i\) is drawn from the multivariate normal distribution with parameters \(\mu_{z_i}\) and \(\Sigma_{z_i}\).</p>
-      <p>How does user input factor into the model? Let \(u_{j,k}\) be a scalar parameter representing the affinity of \(u_j\) for component \(k\). \(l_{i,j}\) is then drawn from a binomial distribution with parameter \(u_{j,z_i}\). Notice that \(u_{j,z_i}\) represent user preference and are not what we set out to find. By performing statistical inference on the model, we learn a representation of user preference as well as mixture component parameters. Though outside the scope of this work, this could potentially have applications in learning user traits.</p>
-      <p>To discuss the intuition for this model, examine figure 3, the model displayed in plate notation. \(l_{i,j}\) is only directly dependent on \(z_i\) and \(u_{j,k}\). This makes the assumption that user likes/dislikes are based off the class alone, not the attributes of the entry itself. Making this assumption not only reduces the complexity of the model, but make maximum likelihood estimations trend towards purity because it is unlikely that the same user will generate conflicting likes/dislikes.</p>
+      <p>Mixture components \(k\) are normally distributed with parameters \(\mu_k\) and \(\Sigma_k\). Entries \(x_i\) are generated according to the following generative process. The component from which \(x_i\) will be generated, \(z_i\) is drawn from the categorical distribution with parameter \(\mathbf\phi\). \(\mathbf\phi\) represents the overall proportion of entries generated by each component. \(x_i\) is drawn from the multivariate normal distribution with parameters \(\mu_{z_i}\) and \(\Sigma_{z_i}\).</p>
+      <p>A second observed quantity, user likes/dislikes is also generated by the model. Let \(u_{j,k}\) be a scalar parameter representing the affinity of \(u_j\) for component \(k\). \(l_{i,j}\) is then drawn from the Bernoulli distribution with parameter \(u_{j,z_i}\). Notice that \(u_{j,z_i}\) represent user preference and are not what we set out to find. By performing statistical inference on the model, we learn a representation of user preference as well as mixture component parameters. Though outside the scope of this work, this could potentially have applications in learning user traits.</p>
+      <p>To discuss the intuition for this model, examine figure 3, the model displayed in plate notation. \(l_{i,j}\) is only directly dependent on \(z_i\) and \(u_{j,k}\). This makes the assumption that user likes/dislikes are based off the class alone, not the attributes of the entry itself. Making this assumption not only reduces the complexity of the model, but will make the maximum likelihood estimate favor purity because users and entries can only be dependent via the mixture component.</p>
       <p class="text-center fake-title">Figure 3</p>
       <img class="img-responsive center-block" src="./img/3.svg">
-      <p>Consider the example from figures 1 and 2. Suppose that user \(u_A\) likes entries on the right but dislikes entries on the left. If a mixture component is centered as in figure 1, then while the probability of \(x\) given \(\Sigma,\mu\) may be high, there exists no \(u_{A,k}\) that can generate likes on the right and dislikes on the left with high probability. Thus we see that a maximum likelihood estimate far prefers two off-center mixture componenets as in figure 2. The model is formally stated as follows&hellip;</p>
+      <p>Consider the example from figures 1 and 2. Suppose that user \(u_A\) likes entries on the right but dislikes entries on the left. If a mixture component \(k\) is centered as in figure 1, then while the probability of entries \(x_i\) may be high both on the left and the right, there exists no \(u_{A,k}\) that can generate likes on the right and dislikes on the left with high probability. Thus we see that a maximum likelihood estimate far prefers two off-center mixture componenets as in figure 2. The model is formally stated as follows&hellip;</p>
       \[
       \begin{align*}
-       \mathbf\phi &amp;\equiv \text{Prior distribution over components}\\
+       \mathbf\phi &amp;\equiv \text{Global proportion of components}\\
        z_i &amp;\sim \text{Categorical}(\mathbf\phi)\\
        \mu_k &amp;\equiv \text{Mean of component }k\\
        \Sigma_k &amp;\equiv \text{Covariance matrix of component }k\\
@@ -72,12 +72,12 @@
       \end{align*}
       \]
       <h2 id="inference">Inference</h2>
-      <p>Let \(X\equiv \{x_i: i\in 1\ldots N\}\), \(L\equiv \{l_{i,j}: i\in 1\ldots N, j\in 1\ldots M\}\), and \(Z\equiv \{z_i: i\in 1\ldots N\}\). Additionally let \(\mu\equiv \{\mu_k: k\in 1\ldots K\}\), \(\Sigma\equiv \{\Sigma_k: k\in 1\ldots K\}\), and \(u\equiv \{u_{j,k}: j\in 1\ldots M, k\in 1\ldots K\}\). By finding the maximum likelihood estimate of the model we find parameters that describe data with the highest probability.</p>
+      <p>Let \(X\equiv \{x_i: i\in 1\ldots N\}\), \(L\equiv \{l_{i,j}: i\in 1\ldots N, j\in 1\ldots M\}\), and \(Z\equiv \{z_i: i\in 1\ldots N\}\). Additionally let \(\mu\equiv \{\mu_k: k\in 1\ldots K\}\), \(\Sigma\equiv \{\Sigma_k: k\in 1\ldots K\}\), and \(u\equiv \{u_{j,k}: j\in 1\ldots M, k\in 1\ldots K\}\). By finding the maximum likelihood estimate of the model we learn parameters that describe data with the highest probability.</p>
       \[
       \DeclareMathOperator*{\argmax}{arg\,max}
       \argmax_{\mu,\Sigma,u,\mathbf\phi}p(X,L\mid\mu,\Sigma,u,\mathbf\phi)
       \]
-      <p>Equivalently, we can maximize the log likelihood function \(\mathcal{L}\) because log is monotonically increasing.</p>
+      <p>Equivalently, we can maximize the log-likelihood function \(\mathcal{L}\) because \(\log\) is monotonically increasing.</p>
       \[
       \begin{align*}
        \mathcal{L}(\mu,\Sigma,u,\mathbf\phi;X,L)&amp;= \log{p(X,L\mid\mu,\Sigma,u,\mathbf\phi)}\\
@@ -86,7 +86,7 @@
        &amp;= \sum_{i\in 1\ldots N}{\log\sum_{k\in 1\ldots K}{\left[{p(x_i,l_{i,1},\ldots,l_{i,M}\mid\mu,\Sigma,u,\mathbf\phi,z_i=k)p(z_i=k\mid\mu,\Sigma,u,\mathbf\phi)}\right]}}\\
       \end{align*}
       \]
-      <p>However directly optimizing the likelihood function is intractable. Instead we use expectation-maximization (EM) an iterative approach to learning the parameters. In this model observed quantities are \(X\) and \(L\). Latent variables are \(Z\), and parameters are \(\mu\), \(\Sigma\), and \(u\). First we find the complete likelihood function \(\mathcal{L}_c\).</p>
+      <p>However directly maximizing the likelihood function via differentiation is intractable. Instead we use expectation-maximization (EM), an iterative approach to learning the parameters. In this model observed quantities are \(X\) and \(L\). Latent/unobserved quantities are \(Z\), and parameters are \(\mu\), \(\Sigma\), and \(u\). First we compute the complete likelihood function \(\mathcal{L}_c\).</p>
       \[
       \begin{align*}
        \mathcal{L}_c(\mu,\Sigma,u,\mathbf\phi;X,L,Z)&amp;= \log{p(X,L,Z\mid\mu,\Sigma,u)}\\
@@ -119,7 +119,7 @@
       \[
       h_k^i=\frac{g_k^i}{\sum_{k'\in 1\ldots K}g_{k'}^i}
       \]
-      <p>The probabilities of \(x_i\) and \(l_{i,j}\) conditioned on parameters can bet simply calculated from the Normal and Bernoulli PDFs respectively.</p>
+      <p>\(h_k^i\) can be seen as a measurement of example \(x_i\) belonging to class \(k\) under the current estimation of parameters. The probabilities of \(x_i\) and \(l_{i,j}\) conditioned on parameters can be simply calculated from the Normal and Bernoulli PDFs respectively.</p>
       \[
       Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{h_k^i\left[\log{\phi_k}+\log{p(x_i\mid \mu_k,\Sigma_k)+\sum_{j\in 1\ldots M}{\log{p(l_{i,j}\mid u_{j,k})}}}\right]}}
       \]
@@ -127,12 +127,12 @@
       \[
       \mu^{(t+1)},\Sigma^{(t+1)},u^{(t+1)},\mathbf\phi^{(t+1)}=\argmax_{\mu,\Sigma,u,\mathbf\phi}{Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})}
       \]
-      <p>For \(\mathbf\phi\), this is easy.</p>
+      <p>For \(\mathbf\phi\), this is easy. The proportion of entries generated by each class will achieve maximum probability when it reflects the apparent proportion suggested by the current estimation of parameters.</p>
       \[
       \nabla_{\mathbf\phi}Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\nabla_{\mathbf\phi}\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{h_k^i\log{\phi_k}}}=0\\
       \phi_k^{(t+1)}=\frac{\sum_{i\in 1\ldots N}h_k^i}N
       \]
-      <p>This is the summation of component probabilities, which intuitively reflects the total distribution of examples across components. For the Gaussian component parameters, simply compute statistics over the data (weighted by \(h_k^i\), example \(x_i\)&apos;s probability of being generated by component \(k\).</p>
+      <p>For the Gaussian component parameters, simply compute statistics over the data (weighted by \(h_k^i\), example \(x_i\)&apos;s probability of being generated by component \(k\).</p>
       \[
       \nabla_{\mu,\Sigma}Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\nabla_{\mu,\Sigma}\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}{h_k^i\log{p(x_i\mid \mu_k,\Sigma_k)}}}=0\\
       \begin{align*}
@@ -144,7 +144,7 @@
       \[
       \nabla_{u_j}Q(\mu,\Sigma,u,\mathbf\phi\mid\mu^{(t)},\Sigma^{(t)},u^{(t)},\mathbf\phi^{(t)})=\nabla_{u_j}\sum_{i\in 1\ldots N}{\sum_{k\in 1\ldots K}h_k^i{\log{p(l_{i,j}\mid u_{j,k})}}}=0
       \]
-      <p>Observe that this is the probability that M independent Bernoulli trials produce \(l_{i,j}\)s weighted by h_k^i. This achieves maximum probability when parameterized with the weighted proportion of likes to dislikes.</p>
+      <p>Observe that this is the probability that M independent Bernoulli trials produce likes/dislikes \(l_{i,j}\) weighted by h_k^i. This achieves maximum probability when parameterized with the weighted proportion of likes to dislikes.</p>
       \[
       u_{j,k}^{(t+1)}=\frac{\sum_{i\in 1\ldots N}h_k^il_{i,j}}{\sum_{i\in 1\ldots N}h_k^i}
       \]
